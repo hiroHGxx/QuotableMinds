@@ -1,9 +1,16 @@
 // LLM連携用 パーソナライズド解説API
+const rateLimitMap = new Map();
+const MAX_REQUESTS_PER_MINUTE = 10;
+const REQUEST_SIZE_LIMIT = 50000; // 50KB
+
 export default async function handler(req, res) {
-  // CORS ヘッダーを設定
+  // セキュリティヘッダーを設定
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
 
   // OPTIONS リクエスト（プリフライト）への対応
   if (req.method === 'OPTIONS') {
@@ -17,13 +24,77 @@ export default async function handler(req, res) {
     return;
   }
 
+  // レート制限チェック
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  const currentTime = Date.now();
+  const windowStart = currentTime - 60000; // 1分間のウィンドウ
+  
+  // 古いエントリをクリーンアップ
+  for (const [ip, requests] of rateLimitMap.entries()) {
+    const filteredRequests = requests.filter(time => time > windowStart);
+    if (filteredRequests.length === 0) {
+      rateLimitMap.delete(ip);
+    } else {
+      rateLimitMap.set(ip, filteredRequests);
+    }
+  }
+  
+  // 現在のIPのリクエスト履歴を取得
+  const clientRequests = rateLimitMap.get(clientIP) || [];
+  const recentRequests = clientRequests.filter(time => time > windowStart);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_MINUTE) {
+    res.status(429).json({ 
+      error: 'Too many requests. Please try again later.',
+      retryAfter: 60 
+    });
+    return;
+  }
+  
+  // 新しいリクエストを記録
+  recentRequests.push(currentTime);
+  rateLimitMap.set(clientIP, recentRequests);
+
+  // リクエストサイズチェック
+  const requestSize = JSON.stringify(req.body).length;
+  if (requestSize > REQUEST_SIZE_LIMIT) {
+    res.status(413).json({ 
+      error: 'Request payload too large',
+      maxSize: REQUEST_SIZE_LIMIT 
+    });
+    return;
+  }
+
   try {
     const { personality, answers, userMessage } = req.body;
 
-    // リクエストデータの検証
+    // リクエストデータの詳細検証
     if (!personality || !answers) {
       res.status(400).json({ 
         error: 'Missing required data: personality and answers are required' 
+      });
+      return;
+    }
+
+    // データ型と構造の検証
+    if (typeof personality !== 'object' || !personality.id || !personality.name) {
+      res.status(400).json({ 
+        error: 'Invalid personality data structure' 
+      });
+      return;
+    }
+
+    if (!Array.isArray(answers) || answers.length === 0) {
+      res.status(400).json({ 
+        error: 'Answers must be a non-empty array' 
+      });
+      return;
+    }
+
+    // userMessageの検証（任意フィールド）
+    if (userMessage && (typeof userMessage !== 'string' || userMessage.length > 1000)) {
+      res.status(400).json({ 
+        error: 'User message must be a string with max 1000 characters' 
       });
       return;
     }
@@ -96,6 +167,9 @@ async function generateGeminiAnalysis(personality, answers, userMessage) {
 
   // ユーザーの回答パターンを整理
   const answerSummary = answers.map((answer, index) => {
+    if (!answer || typeof answer !== 'object') {
+      return `質問${index + 1}: 無効な回答`;
+    }
     return `質問${index + 1}: ${answer.text || '選択済み'}`;
   }).join(', ');
 

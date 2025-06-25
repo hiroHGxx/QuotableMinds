@@ -196,8 +196,23 @@
     </div>
 
     <script>
-        // 診断データ
-        const diagnosisData = {
+        // 診断データ（後で外部ファイルから読み込み）
+        let diagnosisData = null;
+        
+        // 診断データを読み込む
+        async function loadDiagnosisData() {
+            try {
+                const response = await fetch('./diagnosis-data.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to load diagnosis data: ${response.status}`);
+                }
+                diagnosisData = await response.json();
+                console.log('✅ Diagnosis data loaded successfully');
+                return diagnosisData;
+            } catch (error) {
+                console.error('❌ Failed to load diagnosis data:', error);
+                // フォールバック用の最小限データ
+                diagnosisData = {
             "personalities": [
                 {
                     "id": "jobs",
@@ -361,11 +376,35 @@
                 }
             ]
         };
+                return diagnosisData;
+            }
+        }
         
-        // 現在の状態
-        let currentQuestion = 0;
-        let answers = [];
-        let currentScreen = 'start';
+        // アプリケーション状態管理
+        const DiagnosisApp = {
+            state: {
+                currentQuestion: 0,
+                answers: [],
+                currentScreen: 'start',
+                isLoading: false
+            },
+            
+            // 状態更新メソッド
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                this.render();
+            },
+            
+            // 状態取得メソッド
+            getState() {
+                return { ...this.state };
+            },
+            
+            // レンダリング処理
+            render() {
+                // 必要に応じて状態変更に基づくUI更新を行う
+            }
+        };
         
         // DOM要素の取得
         const screens = {
@@ -386,7 +425,7 @@
             // 指定された画面を表示
             if (screens[screenName]) {
                 screens[screenName].classList.remove('hidden');
-                currentScreen = screenName;
+                DiagnosisApp.setState({ currentScreen: screenName });
                 
                 // 画面切り替え時のアニメーション
                 screens[screenName].style.opacity = '0';
@@ -399,29 +438,49 @@
         }
         
         // 診断開始
-        function startDiagnosis() {
+        async function startDiagnosis() {
             console.log('Starting diagnosis...');
-            currentQuestion = 0;
-            answers = [];
+            
+            // 診断データが読み込まれていない場合は読み込む
+            if (!diagnosisData) {
+                DiagnosisApp.setState({ isLoading: true });
+                await loadDiagnosisData();
+                DiagnosisApp.setState({ isLoading: false });
+            }
+            
+            DiagnosisApp.setState({ 
+                currentQuestion: 0, 
+                answers: [],
+                isLoading: false 
+            });
             showScreen('diagnosis');
             loadQuestion();
         }
         
         // 質問を読み込み
         function loadQuestion() {
-            if (currentQuestion >= diagnosisData.questions.length) {
+            const state = DiagnosisApp.getState();
+            
+            // 診断データの存在確認
+            if (!diagnosisData || !diagnosisData.questions) {
+                console.error('Diagnosis data not loaded');
+                showLLMStatus('data_error', false, '診断データの読み込みに失敗しました');
+                return;
+            }
+            
+            if (state.currentQuestion >= diagnosisData.questions.length) {
                 calculateResult();
                 return;
             }
             
-            const question = diagnosisData.questions[currentQuestion];
+            const question = diagnosisData.questions[state.currentQuestion];
             
             // 質問テキストを更新
             document.getElementById('question-text').textContent = question.question;
             
             // プログレスバーを更新
-            const progress = ((currentQuestion + 1) / diagnosisData.questions.length) * 100;
-            document.getElementById('current-question').textContent = currentQuestion + 1;
+            const progress = ((state.currentQuestion + 1) / diagnosisData.questions.length) * 100;
+            document.getElementById('current-question').textContent = state.currentQuestion + 1;
             document.getElementById('progress-percent').textContent = Math.round(progress);
             document.getElementById('progress-bar').style.width = progress + '%';
             
@@ -443,15 +502,20 @@
         
         // 選択肢を選択
         function selectOption(optionIndex) {
-            const question = diagnosisData.questions[currentQuestion];
+            const state = DiagnosisApp.getState();
+            const question = diagnosisData.questions[state.currentQuestion];
             const selectedOption = question.options[optionIndex];
             
-            // 回答を保存
-            answers[currentQuestion] = {
+            // 回答を状態に保存
+            const newAnswers = [...state.answers];
+            newAnswers[state.currentQuestion] = {
                 questionId: question.id,
                 optionIndex: optionIndex,
+                text: selectedOption.text,
                 points: selectedOption.points
             };
+            
+            DiagnosisApp.setState({ answers: newAnswers });
             
             // 選択された選択肢をハイライト
             const options = document.querySelectorAll('#options-container button');
@@ -466,35 +530,38 @@
             // 次の質問ボタンを有効化
             document.getElementById('next-btn').disabled = false;
             
-            console.log(`Question ${currentQuestion + 1} answered:`, selectedOption);
+            console.log(`Question ${state.currentQuestion + 1} answered:`, selectedOption);
         }
         
         // 次の質問へ
         function nextQuestion() {
-            if (answers[currentQuestion]) {
-                currentQuestion++;
+            const state = DiagnosisApp.getState();
+            if (state.answers[state.currentQuestion]) {
+                DiagnosisApp.setState({ currentQuestion: state.currentQuestion + 1 });
                 loadQuestion();
             }
         }
         
         // 前の質問へ
         function prevQuestion() {
-            if (currentQuestion > 0) {
-                currentQuestion--;
+            const state = DiagnosisApp.getState();
+            if (state.currentQuestion > 0) {
+                DiagnosisApp.setState({ currentQuestion: state.currentQuestion - 1 });
                 loadQuestion();
             }
         }
         
         // ナビゲーションボタンの状態更新
         function updateNavigationButtons() {
+            const state = DiagnosisApp.getState();
             const prevBtn = document.getElementById('prev-btn');
             const nextBtn = document.getElementById('next-btn');
             
-            prevBtn.disabled = currentQuestion === 0;
-            nextBtn.disabled = !answers[currentQuestion];
+            prevBtn.disabled = state.currentQuestion === 0;
+            nextBtn.disabled = !state.answers[state.currentQuestion];
             
             // 最後の質問の場合、ボタンテキストを変更
-            if (currentQuestion === diagnosisData.questions.length - 1) {
+            if (state.currentQuestion === diagnosisData.questions.length - 1) {
                 nextBtn.textContent = '結果を見る';
             } else {
                 nextBtn.textContent = '次の質問 →';
@@ -504,6 +571,7 @@
         // 診断結果を計算
         function calculateResult() {
             console.log('Calculating result...');
+            const state = DiagnosisApp.getState();
             
             // 各偉人のポイントを集計
             const scores = {};
@@ -511,7 +579,7 @@
                 scores[p.id] = 0;
             });
             
-            answers.forEach(answer => {
+            state.answers.forEach(answer => {
                 Object.entries(answer.points).forEach(([personalityId, points]) => {
                     scores[personalityId] += points;
                 });
@@ -552,6 +620,10 @@
         
         // パーソナライズ解説をAPIから取得
         async function fetchPersonalizedAnalysis(personality) {
+            // タイムアウト制御
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
+            
             try {
                 const response = await fetch('./api/personalized-analysis', {
                     method: 'POST',
@@ -560,9 +632,12 @@
                     },
                     body: JSON.stringify({
                         personality: personality,
-                        answers: answers
-                    })
+                        answers: DiagnosisApp.getState().answers
+                    }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
                 
                 if (response.ok) {
                     const data = await response.json();
@@ -574,13 +649,28 @@
                     
                     // LLM使用状況を表示
                     showLLMStatus(data.llmStatus, data.llmUsed, data.errorMessage);
+                } else if (response.status === 429) {
+                    // レート制限エラー
+                    const errorData = await response.json().catch(() => ({}));
+                    showLLMStatus('rate_limit', false, `リクエスト過多です。${errorData.retryAfter || 60}秒後に再試行してください。`);
+                } else if (response.status === 413) {
+                    // ペイロード過大エラー
+                    showLLMStatus('payload_error', false, 'リクエストデータが大きすぎます');
                 } else {
                     console.error('API Error:', response.status);
-                    showLLMStatus('api_error', false, 'API接続エラー');
+                    showLLMStatus('api_error', false, `APIエラー (${response.status})`);
                 }
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error('Fetch Error:', error);
-                showLLMStatus('fetch_error', false, 'ネットワークエラー');
+                
+                if (error.name === 'AbortError') {
+                    showLLMStatus('timeout_error', false, 'リクエストタイムアウト（15秒）');
+                } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showLLMStatus('network_error', false, 'ネットワーク接続エラー');
+                } else {
+                    showLLMStatus('fetch_error', false, 'リクエストエラー');
+                }
             }
         }
         
@@ -603,11 +693,36 @@
                     icon = '⚠️';
                     text = 'AIが利用できないため、標準解説を表示しています';
                     break;
+                case 'rate_limit':
+                    bgColor = 'bg-orange-100 border border-orange-300';
+                    icon = '⏳';
+                    text = errorMessage || 'リクエスト制限に達しました';
+                    break;
+                case 'timeout_error':
+                    bgColor = 'bg-red-100 border border-red-300';
+                    icon = '⏱️';
+                    text = 'リクエストがタイムアウトしました';
+                    break;
+                case 'network_error':
+                    bgColor = 'bg-red-100 border border-red-300';
+                    icon = '🌐';
+                    text = 'ネットワーク接続に問題があります';
+                    break;
+                case 'payload_error':
+                    bgColor = 'bg-red-100 border border-red-300';
+                    icon = '📦';
+                    text = 'データサイズが大きすぎます';
+                    break;
+                case 'data_error':
+                    bgColor = 'bg-red-100 border border-red-300';
+                    icon = '🗂️';
+                    text = '診断データの読み込みエラー';
+                    break;
                 case 'api_error':
                 case 'fetch_error':
                     bgColor = 'bg-red-100 border border-red-300';
                     icon = '❌';
-                    text = 'API接続エラーのため、標準解説を表示しています';
+                    text = errorMessage || 'API接続エラーのため、標準解説を表示しています';
                     break;
                 default:
                     bgColor = 'bg-gray-100 border border-gray-300';
@@ -629,8 +744,11 @@
         // リトライ機能
         function retryDiagnosis() {
             console.log('Retrying diagnosis...');
-            currentQuestion = 0;
-            answers = [];
+            DiagnosisApp.setState({
+                currentQuestion: 0,
+                answers: [],
+                isLoading: false
+            });
             showScreen('start');
         }
         
@@ -659,8 +777,14 @@
         document.getElementById('share-btn').addEventListener('click', shareResult);
         
         // 初期化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('Quotable Minds - Screen switching functionality loaded');
+            
+            // 診断データを事前読み込み（バックグラウンド）
+            loadDiagnosisData().catch(error => {
+                console.warn('Background loading failed, will load on demand:', error);
+            });
+            
             showScreen('start'); // 初期画面を表示
         });
     </script>
