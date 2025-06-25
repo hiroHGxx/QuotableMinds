@@ -1,0 +1,164 @@
+{
+  "personalities": [
+    {
+      "id": "jobs",
+      "name": "スティーブ・ジョブズ",
+      "type": "革新家",
+      "quote": "ハングリーであれ。愚か者であれ。",
+      "description": "既存の常識を覆し、世界を変える革新的なアイデアを追求する人。完璧主義で、美しさと機能性を兼ね備えた創造を目指します。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Jobs"
+    },
+    {
+      "id": "chanel",
+      "name": "ココ・シャネル",
+      "type": "自由な魂",
+      "quote": "私は流行を作るのではない。私が流行なのだ。",
+      "description": "既存の枠にとらわれず、自分らしさを大切にする人。エレガンスと独立心を持ち、他人の期待より自分の信念を優先します。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Chanel"
+    },
+    {
+      "id": "einstein",
+      "name": "アルベルト・アインシュタイン",
+      "type": "探求者",
+      "quote": "想像力は知識よりも重要である。",
+      "description": "知識欲が旺盛で、物事の本質を理解しようとする人。論理的思考と創造性を兼ね備え、常に新しい発見を求めています。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Einstein"
+    },
+    {
+      "id": "disney",
+      "name": "ウォルト・ディズニー",
+      "type": "夢想家",
+      "quote": "夢見ることができれば、それは実現できる。",
+      "description": "大きな夢を抱き、人々に希望と喜びを与える人。楽観的で、困難な状況でも前向きに未来を描き続けます。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Disney"
+    },
+    {
+      "id": "mandela",
+      "name": "ネルソン・マンデラ",
+      "type": "平和の使者",
+      "quote": "教育は、世界を変えるために使える最も強力な武器である。",
+      "description": "他者との調和を重視し、平和と理解を築く人。困難に直面しても諦めず、すべての人の幸福を願う温かい心の持ち主です。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Mandela"
+    },
+    {
+      "id": "curie",
+      "name": "マリー・キュリー",
+      "type": "挑戦者",
+      "quote": "人生において恐れるべきものは何もない。理解すべきことがあるだけだ。",
+      "description": "困難に立ち向かい、前例のない道を切り開く人。強い意志と情熱を持ち、性別や社会的制約を超えて目標を達成します。",
+      "imageUrl": "https://placehold.jp/300x300.png?text=Curie"
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "question": "新しいプロジェクトを始める時、あなたが最も重視するのは？",
+      "options": [
+        {
+          "text": "誰も思いつかなかった革新的なアイデア",
+          "points": { "jobs": 2, "einstein": 1 }
+        },
+        {
+          "text": "自分らしさを表現できること",
+          "points": { "chanel": 2, "disney": 1 }
+        },
+        {
+          "text": "多くの人に喜んでもらえること",
+          "points": { "disney": 2, "mandela": 1 }
+        },
+        {
+          "text": "困難に挑戦し成長できること",
+          "points": { "curie": 2, "mandela": 1 }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "question": "困難な問題に直面した時、あなたはどう対処しますか？",
+      "options": [
+        {
+          "text": "徹底的に分析し、根本原因を理解する",
+          "points": { "einstein": 2, "curie": 1 }
+        },
+        {
+          "text": "従来の方法を疑い、全く新しいアプローチを試す",
+          "points": { "jobs": 2, "chanel": 1 }
+        },
+        {
+          "text": "周りの人と協力し、みんなで解決策を見つける",
+          "points": { "mandela": 2, "disney": 1 }
+        },
+        {
+          "text": "諦めずに何度でも挑戦し続ける",
+          "points": { "curie": 2, "disney": 1 }
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "question": "あなたにとって「成功」とは何ですか？",
+      "options": [
+        {
+          "text": "世界を変えるようなインパクトを与えること",
+          "points": { "jobs": 2, "einstein": 1 }
+        },
+        {
+          "text": "自分の価値観を貫き通せること",
+          "points": { "chanel": 2, "curie": 1 }
+        },
+        {
+          "text": "多くの人を幸せにできること",
+          "points": { "disney": 2, "mandela": 1 }
+        },
+        {
+          "text": "未知の領域を開拓すること",
+          "points": { "curie": 2, "einstein": 1 }
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "question": "理想的な一日の過ごし方は？",
+      "options": [
+        {
+          "text": "集中して創造的な作業に没頭する",
+          "points": { "jobs": 1, "einstein": 2 }
+        },
+        {
+          "text": "自分のペースで好きなことを楽しむ",
+          "points": { "chanel": 2, "disney": 1 }
+        },
+        {
+          "text": "大切な人たちと時間を共有する",
+          "points": { "mandela": 2, "disney": 1 }
+        },
+        {
+          "text": "新しいことを学び、挑戦する",
+          "points": { "curie": 2, "einstein": 1 }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "question": "人生で最も大切にしたい価値観は？",
+      "options": [
+        {
+          "text": "完璧性と美しさ",
+          "points": { "jobs": 2, "chanel": 1 }
+        },
+        {
+          "text": "自由と独立",
+          "points": { "chanel": 2, "curie": 1 }
+        },
+        {
+          "text": "希望と楽観",
+          "points": { "disney": 2, "mandela": 1 }
+        },
+        {
+          "text": "真実と知識",
+          "points": { "einstein": 2, "curie": 1 }
+        }
+      ]
+    }
+  ]
+}

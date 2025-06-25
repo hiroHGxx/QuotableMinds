@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quotable Minds - あなたを導く偉人の言葉</title>
+    <meta name="description" content="あなたの価値観に合う歴史上の偉人とその名言を見つける診断コンテンツ">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Custom styles -->
+    <style>
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-sans { font-family: 'Inter', sans-serif; }
+        
+        /* スムーズなアニメーション */
+        .screen { 
+            transition: opacity 0.3s ease-in-out; 
+        }
+        
+        /* 選択肢ボタンのカスタムスタイル */
+        .option-button {
+            background-color: #ffffff;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        
+        .option-button:hover {
+            border-color: #166534;
+            background-color: #f0fdf4;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .option-button.selected {
+            border-color: #166534;
+            background-color: #f0fdf4;
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
+        }
+        
+        /* カードのシャドウスタイル */
+        .card-shadow {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* ボタンのマイクロインタラクション */
+        .btn-primary {
+            background-color: #166534;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-primary:hover {
+            background-color: #15803d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.3);
+        }
+        
+        /* プログレスバーのアニメーション */
+        .progress-bar {
+            background: linear-gradient(90deg, #166534, #15803d);
+            border-radius: 8px;
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 font-sans">
+    <div class="min-h-screen">
+        
+        <!-- スタート画面 -->
+        <div id="start-screen" class="screen">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="text-center max-w-2xl mx-auto">
+                    <h1 class="font-serif text-4xl md:text-6xl font-bold text-gray-800 mb-6">
+                        Quotable Minds
+                    </h1>
+                    <p class="font-serif text-xl md:text-2xl text-gray-600 mb-8">
+                        あなたを導く偉人の言葉
+                    </p>
+                    <p class="text-gray-600 mb-12 text-lg leading-relaxed">
+                        5つの質問に答えて、あなたの価値観に近い<br>
+                        歴史上の偉人とその名言に出会いましょう
+                    </p>
+                    <button id="start-btn" class="btn-primary text-white px-8 py-4 rounded-full text-lg font-medium">
+                        診断を始める
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 診断画面 -->
+        <div id="diagnosis-screen" class="screen hidden">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="w-full max-w-2xl mx-auto">
+                    
+                    <!-- プログレスバー -->
+                    <div class="mb-8">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>質問 <span id="current-question">1</span> / 5</span>
+                            <span><span id="progress-percent">20</span>%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="progress-bar h-2 rounded-full" style="width: 20%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 質問カード -->
+                    <div class="bg-white rounded-2xl card-shadow p-8 mb-6">
+                        <h2 id="question-text" class="font-serif text-2xl md:text-3xl text-gray-800 mb-8 leading-relaxed">
+                            <!-- 質問がここに表示されます -->
+                        </h2>
+                        
+                        <!-- 選択肢 -->
+                        <div id="options-container" class="space-y-4">
+                            <!-- 選択肢がここに動的に生成されます -->
+                        </div>
+                    </div>
+
+                    <!-- ナビゲーション -->
+                    <div class="flex justify-between">
+                        <button id="prev-btn" class="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50" disabled>
+                            ← 前の質問
+                        </button>
+                        <button id="next-btn" class="btn-primary text-white px-6 py-2 rounded-lg disabled:opacity-50" disabled>
+                            次の質問 →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果画面 -->
+        <div id="result-screen" class="screen hidden">
+            <div class="min-h-screen flex items-center justify-center p-4">
+                <div class="w-full max-w-2xl mx-auto text-center">
+                    
+                    <h2 class="font-serif text-3xl md:text-4xl text-gray-800 mb-8">
+                        診断結果
+                    </h2>
+
+                    <!-- 結果カード -->
+                    <div class="bg-white rounded-2xl card-shadow p-8 mb-8">
+                        <div class="mb-6">
+                            <img id="result-image" src="" alt="" class="w-32 h-32 mx-auto rounded-full mb-4">
+                        </div>
+                        
+                        <h3 class="font-serif text-2xl md:text-3xl text-gray-800 mb-2">
+                            あなたは
+                        </h3>
+                        <h4 id="result-name" class="font-serif text-3xl md:text-4xl font-bold text-green-800 mb-4">
+                            <!-- 偉人名 -->
+                        </h4>
+                        <p id="result-type" class="text-xl text-gray-600 mb-6">
+                            <!-- タイプ -->
+                        </p>
+                        
+                        <blockquote class="font-serif text-xl md:text-2xl text-gray-700 italic mb-6 leading-relaxed">
+                            "<span id="result-quote"><!-- 名言 --></span>"
+                        </blockquote>
+                        
+                        <p id="result-description" class="text-gray-600 leading-relaxed">
+                            <!-- 説明文 -->
+                        </p>
+                    </div>
+
+                    <!-- アクションボタン -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="retry-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg transition-colors duration-200">
+                            もう一度診断する
+                        </button>
+                        <button id="share-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-all duration-200 hover:transform hover:scale-105">
+                            結果をシェア
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 診断データ
+        const diagnosisData = {
+            "personalities": [
+                {
+                    "id": "jobs",
+                    "name": "スティーブ・ジョブズ",
+                    "type": "革新家",
+                    "quote": "ハングリーであれ。愚か者であれ。",
+                    "description": "既存の常識を覆し、世界を変える革新的なアイデアを追求する人。完璧主義で、美しさと機能性を兼ね備えた創造を目指します。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Jobs"
+                },
+                {
+                    "id": "chanel",
+                    "name": "ココ・シャネル",
+                    "type": "自由な魂",
+                    "quote": "私は流行を作るのではない。私が流行なのだ。",
+                    "description": "既存の枠にとらわれず、自分らしさを大切にする人。エレガンスと独立心を持ち、他人の期待より自分の信念を優先します。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Chanel"
+                },
+                {
+                    "id": "einstein",
+                    "name": "アルベルト・アインシュタイン",
+                    "type": "探求者",
+                    "quote": "想像力は知識よりも重要である。",
+                    "description": "知識欲が旺盛で、物事の本質を理解しようとする人。論理的思考と創造性を兼ね備え、常に新しい発見を求めています。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Einstein"
+                },
+                {
+                    "id": "disney",
+                    "name": "ウォルト・ディズニー",
+                    "type": "夢想家",
+                    "quote": "夢見ることができれば、それは実現できる。",
+                    "description": "大きな夢を抱き、人々に希望と喜びを与える人。楽観的で、困難な状況でも前向きに未来を描き続けます。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Disney"
+                },
+                {
+                    "id": "mandela",
+                    "name": "ネルソン・マンデラ",
+                    "type": "平和の使者",
+                    "quote": "教育は、世界を変えるために使える最も強力な武器である。",
+                    "description": "他者との調和を重視し、平和と理解を築く人。困難に直面しても諦めず、すべての人の幸福を願う温かい心の持ち主です。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Mandela"
+                },
+                {
+                    "id": "curie",
+                    "name": "マリー・キュリー",
+                    "type": "挑戦者",
+                    "quote": "人生において恐れるべきものは何もない。理解すべきことがあるだけだ。",
+                    "description": "困難に立ち向かい、前例のない道を切り開く人。強い意志と情熱を持ち、性別や社会的制約を超えて目標を達成します。",
+                    "imageUrl": "https://placehold.jp/300x300.png?text=Curie"
+                }
+            ],
+            "questions": [
+                {
+                    "id": 1,
+                    "question": "新しいプロジェクトを始める時、あなたが最も重視するのは？",
+                    "options": [
+                        {
+                            "text": "誰も思いつかなかった革新的なアイデア",
+                            "points": { "jobs": 2, "einstein": 1 }
+                        },
+                        {
+                            "text": "自分らしさを表現できること",
+                            "points": { "chanel": 2, "disney": 1 }
+                        },
+                        {
+                            "text": "多くの人に喜んでもらえること",
+                            "points": { "disney": 2, "mandela": 1 }
+                        },
+                        {
+                            "text": "困難に挑戦し成長できること",
+                            "points": { "curie": 2, "mandela": 1 }
+                        }
+                    ]
+                },
+                {
+                    "id": 2,
+                    "question": "困難な問題に直面した時、あなたはどう対処しますか？",
+                    "options": [
+                        {
+                            "text": "徹底的に分析し、根本原因を理解する",
+                            "points": { "einstein": 2, "curie": 1 }
+                        },
+                        {
+                            "text": "従来の方法を疑い、全く新しいアプローチを試す",
+                            "points": { "jobs": 2, "chanel": 1 }
+                        },
+                        {
+                            "text": "周りの人と協力し、みんなで解決策を見つける",
+                            "points": { "mandela": 2, "disney": 1 }
+                        },
+                        {
+                            "text": "諦めずに何度でも挑戦し続ける",
+                            "points": { "curie": 2, "disney": 1 }
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "question": "あなたにとって「成功」とは何ですか？",
+                    "options": [
+                        {
+                            "text": "世界を変えるようなインパクトを与えること",
+                            "points": { "jobs": 2, "einstein": 1 }
+                        },
+                        {
+                            "text": "自分の価値観を貫き通せること",
+                            "points": { "chanel": 2, "curie": 1 }
+                        },
+                        {
+                            "text": "多くの人を幸せにできること",
+                            "points": { "disney": 2, "mandela": 1 }
+                        },
+                        {
+                            "text": "未知の領域を開拓すること",
+                            "points": { "curie": 2, "einstein": 1 }
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "question": "理想的な一日の過ごし方は？",
+                    "options": [
+                        {
+                            "text": "集中して創造的な作業に没頭する",
+                            "points": { "jobs": 1, "einstein": 2 }
+                        },
+                        {
+                            "text": "自分のペースで好きなことを楽しむ",
+                            "points": { "chanel": 2, "disney": 1 }
+                        },
+                        {
+                            "text": "大切な人たちと時間を共有する",
+                            "points": { "mandela": 2, "disney": 1 }
+                        },
+                        {
+                            "text": "新しいことを学び、挑戦する",
+                            "points": { "curie": 2, "einstein": 1 }
+                        }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "question": "人生で最も大切にしたい価値観は？",
+                    "options": [
+                        {
+                            "text": "完璧性と美しさ",
+                            "points": { "jobs": 2, "chanel": 1 }
+                        },
+                        {
+                            "text": "自由と独立",
+                            "points": { "chanel": 2, "curie": 1 }
+                        },
+                        {
+                            "text": "希望と楽観",
+                            "points": { "disney": 2, "mandela": 1 }
+                        },
+                        {
+                            "text": "真実と知識",
+                            "points": { "einstein": 2, "curie": 1 }
+                        }
+                    ]
+                }
+            ]
+        };
+        
+        // 現在の状態
+        let currentQuestion = 0;
+        let answers = [];
+        let currentScreen = 'start';
+        
+        // DOM要素の取得
+        const screens = {
+            start: document.getElementById('start-screen'),
+            diagnosis: document.getElementById('diagnosis-screen'),
+            result: document.getElementById('result-screen')
+        };
+        
+        // 画面切り替え機能
+        function showScreen(screenName) {
+            console.log(`Switching to ${screenName} screen`);
+            
+            // 全ての画面を非表示
+            Object.values(screens).forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            
+            // 指定された画面を表示
+            if (screens[screenName]) {
+                screens[screenName].classList.remove('hidden');
+                currentScreen = screenName;
+                
+                // 画面切り替え時のアニメーション
+                screens[screenName].style.opacity = '0';
+                setTimeout(() => {
+                    screens[screenName].style.opacity = '1';
+                }, 50);
+            } else {
+                console.error(`Screen ${screenName} not found`);
+            }
+        }
+        
+        // 診断開始
+        function startDiagnosis() {
+            console.log('Starting diagnosis...');
+            currentQuestion = 0;
+            answers = [];
+            showScreen('diagnosis');
+            loadQuestion();
+        }
+        
+        // 質問を読み込み
+        function loadQuestion() {
+            if (currentQuestion >= diagnosisData.questions.length) {
+                calculateResult();
+                return;
+            }
+            
+            const question = diagnosisData.questions[currentQuestion];
+            
+            // 質問テキストを更新
+            document.getElementById('question-text').textContent = question.question;
+            
+            // プログレスバーを更新
+            const progress = ((currentQuestion + 1) / diagnosisData.questions.length) * 100;
+            document.getElementById('current-question').textContent = currentQuestion + 1;
+            document.getElementById('progress-percent').textContent = Math.round(progress);
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            // 選択肢を生成
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-button';
+                button.textContent = option.text;
+                button.addEventListener('click', () => selectOption(index));
+                optionsContainer.appendChild(button);
+            });
+            
+            // ナビゲーションボタンの状態を更新
+            updateNavigationButtons();
+        }
+        
+        // 選択肢を選択
+        function selectOption(optionIndex) {
+            const question = diagnosisData.questions[currentQuestion];
+            const selectedOption = question.options[optionIndex];
+            
+            // 回答を保存
+            answers[currentQuestion] = {
+                questionId: question.id,
+                optionIndex: optionIndex,
+                points: selectedOption.points
+            };
+            
+            // 選択された選択肢をハイライト
+            const options = document.querySelectorAll('#options-container button');
+            options.forEach((btn, index) => {
+                if (index === optionIndex) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+            
+            // 次の質問ボタンを有効化
+            document.getElementById('next-btn').disabled = false;
+            
+            console.log(`Question ${currentQuestion + 1} answered:`, selectedOption);
+        }
+        
+        // 次の質問へ
+        function nextQuestion() {
+            if (answers[currentQuestion]) {
+                currentQuestion++;
+                loadQuestion();
+            }
+        }
+        
+        // 前の質問へ
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                loadQuestion();
+            }
+        }
+        
+        // ナビゲーションボタンの状態更新
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            
+            prevBtn.disabled = currentQuestion === 0;
+            nextBtn.disabled = !answers[currentQuestion];
+            
+            // 最後の質問の場合、ボタンテキストを変更
+            if (currentQuestion === diagnosisData.questions.length - 1) {
+                nextBtn.textContent = '結果を見る';
+            } else {
+                nextBtn.textContent = '次の質問 →';
+            }
+        }
+        
+        // 診断結果を計算
+        function calculateResult() {
+            console.log('Calculating result...');
+            
+            // 各偉人のポイントを集計
+            const scores = {};
+            diagnosisData.personalities.forEach(p => {
+                scores[p.id] = 0;
+            });
+            
+            answers.forEach(answer => {
+                Object.entries(answer.points).forEach(([personalityId, points]) => {
+                    scores[personalityId] += points;
+                });
+            });
+            
+            console.log('Scores:', scores);
+            
+            // 最高得点の偉人を選択
+            let maxScore = 0;
+            let resultPersonality = null;
+            
+            Object.entries(scores).forEach(([personalityId, score]) => {
+                if (score > maxScore) {
+                    maxScore = score;
+                    resultPersonality = diagnosisData.personalities.find(p => p.id === personalityId);
+                }
+            });
+            
+            console.log('Result personality:', resultPersonality);
+            
+            showResult(resultPersonality);
+        }
+        
+        // 結果を表示
+        function showResult(personality) {
+            showScreen('result');
+            
+            document.getElementById('result-name').textContent = personality.name;
+            document.getElementById('result-type').textContent = `タイプ：${personality.type}`;
+            document.getElementById('result-quote').textContent = personality.quote;
+            document.getElementById('result-description').textContent = personality.description;
+            document.getElementById('result-image').src = personality.imageUrl;
+            document.getElementById('result-image').alt = personality.name;
+        }
+        
+        // リトライ機能
+        function retryDiagnosis() {
+            console.log('Retrying diagnosis...');
+            currentQuestion = 0;
+            answers = [];
+            showScreen('start');
+        }
+        
+        // SNSシェア機能
+        function shareResult() {
+            const resultName = document.getElementById('result-name').textContent;
+            const resultQuote = document.getElementById('result-quote').textContent;
+            const url = window.location.href;
+            
+            const shareText = `私は${resultName}タイプでした！\n"${resultQuote}"\n\n#QuotableMinds あなたを導く偉人の言葉\n${url}`;
+            
+            // Twitter/X のシェアURL
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+            
+            console.log('Sharing result:', shareText);
+            
+            // 新しいウィンドウでTwitterを開く
+            window.open(twitterUrl, '_blank', 'width=550,height=420');
+        }
+        
+        // イベントリスナーの設定
+        document.getElementById('start-btn').addEventListener('click', startDiagnosis);
+        document.getElementById('retry-btn').addEventListener('click', retryDiagnosis);
+        document.getElementById('next-btn').addEventListener('click', nextQuestion);
+        document.getElementById('prev-btn').addEventListener('click', prevQuestion);
+        document.getElementById('share-btn').addEventListener('click', shareResult);
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Quotable Minds - Screen switching functionality loaded');
+            showScreen('start'); // 初期画面を表示
+        });
+    </script>
+</body>
+</html>
