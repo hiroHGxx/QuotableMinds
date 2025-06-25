@@ -1,0 +1,26 @@
+{
+  "name": "quotable-minds",
+  "version": "1.0.0",
+  "description": "Quotable Minds - あなたを導く偉人の言葉",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site, no build needed'",
+    "start": "vercel dev"
+  },
+  "keywords": [
+    "diagnosis",
+    "personality",
+    "quotes",
+    "historical figures",
+    "web app"
+  ],
+  "author": "hiroHGxx",
+  "license": "MIT",
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
