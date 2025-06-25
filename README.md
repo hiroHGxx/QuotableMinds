@@ -27,7 +27,7 @@
 ### バックエンド (Vercel版)
 - Vercel Serverless Functions
 - Node.js API Routes
-- OpenAI GPT API (将来実装)
+- Google Gemini API (パーソナライズ解説)
 
 ## 📦 セットアップ
 
@@ -60,9 +60,15 @@ vercel dev
 Vercel版では以下の環境変数が必要です：
 
 ```bash
-OPENAI_API_KEY=sk-your-openai-api-key-here
+GEMINI_API_KEY=your-gemini-api-key-here
 NODE_ENV=development
 ```
+
+### GEMINI API キーの取得方法
+1. [Google AI Studio](https://aistudio.google.com/app/apikey) にアクセス
+2. Google アカウントでログイン
+3. 「Create API Key」をクリックして新しいAPIキーを生成
+4. 生成されたAPIキーを環境変数 `GEMINI_API_KEY` に設定
 
 ## 📁 プロジェクト構造
 
@@ -112,7 +118,7 @@ curl -X POST https://your-project.vercel.app/api/personalized-analysis \
 
 ## 🔮 将来の機能拡張
 
-- [ ] LLM によるパーソナライズ解説
+- [x] LLM によるパーソナライズ解説（Google Gemini API）
 - [ ] 多言語対応（英語版）
 - [ ] ユーザー履歴保存
 - [ ] ソーシャル機能

@@ -171,6 +171,14 @@
                         <p id="result-description" class="text-gray-600 leading-relaxed">
                             <!-- 説明文 -->
                         </p>
+                        
+                        <!-- LLM使用状況表示 -->
+                        <div id="llm-status" class="mt-4 p-3 rounded-lg text-sm hidden">
+                            <div class="flex items-center">
+                                <span id="llm-status-icon" class="mr-2"></span>
+                                <span id="llm-status-text"></span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- アクションボタン -->
@@ -537,6 +545,85 @@
             document.getElementById('result-description').textContent = personality.description;
             document.getElementById('result-image').src = personality.imageUrl;
             document.getElementById('result-image').alt = personality.name;
+            
+            // パーソナライズ解説をAPI経由で取得
+            fetchPersonalizedAnalysis(personality);
+        }
+        
+        // パーソナライズ解説をAPIから取得
+        async function fetchPersonalizedAnalysis(personality) {
+            try {
+                const response = await fetch('./api/personalized-analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        personality: personality,
+                        answers: answers
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // パーソナライズ解説を表示
+                    if (data.analysis) {
+                        document.getElementById('result-description').textContent = data.analysis;
+                    }
+                    
+                    // LLM使用状況を表示
+                    showLLMStatus(data.llmStatus, data.llmUsed, data.errorMessage);
+                } else {
+                    console.error('API Error:', response.status);
+                    showLLMStatus('api_error', false, 'API接続エラー');
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                showLLMStatus('fetch_error', false, 'ネットワークエラー');
+            }
+        }
+        
+        // LLM使用状況を表示
+        function showLLMStatus(status, llmUsed, errorMessage) {
+            const statusDiv = document.getElementById('llm-status');
+            const iconSpan = document.getElementById('llm-status-icon');
+            const textSpan = document.getElementById('llm-status-text');
+            
+            let bgColor, icon, text;
+            
+            switch(status) {
+                case 'gemini':
+                    bgColor = 'bg-green-100 border border-green-300';
+                    icon = '🤖';
+                    text = 'AI (Gemini) が解説を生成しました';
+                    break;
+                case 'mock_fallback':
+                    bgColor = 'bg-yellow-100 border border-yellow-300';
+                    icon = '⚠️';
+                    text = 'AIが利用できないため、標準解説を表示しています';
+                    break;
+                case 'api_error':
+                case 'fetch_error':
+                    bgColor = 'bg-red-100 border border-red-300';
+                    icon = '❌';
+                    text = 'API接続エラーのため、標準解説を表示しています';
+                    break;
+                default:
+                    bgColor = 'bg-gray-100 border border-gray-300';
+                    icon = '📝';
+                    text = '標準解説を表示しています';
+            }
+            
+            statusDiv.className = `mt-4 p-3 rounded-lg text-sm ${bgColor}`;
+            iconSpan.textContent = icon;
+            textSpan.textContent = text;
+            statusDiv.classList.remove('hidden');
+            
+            // 開発環境でのデバッグ情報
+            if (errorMessage && window.location.hostname === 'localhost') {
+                textSpan.textContent += ` (${errorMessage})`;
+            }
         }
         
         // リトライ機能

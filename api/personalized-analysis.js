@@ -28,12 +28,32 @@ export default async function handler(req, res) {
       return;
     }
 
-    // 現在はモックレスポンス（後でLLM APIに置き換え）
-    const mockAnalysis = generateMockAnalysis(personality, answers, userMessage);
+    // GEMINI API を使用してパーソナライズされた解説を生成
+    let analysis;
+    let llmUsed = false;
+    let llmStatus = 'mock'; // 'gemini', 'mock', 'error'
+    let errorMessage = null;
+    
+    try {
+      analysis = await generateGeminiAnalysis(personality, answers, userMessage);
+      llmUsed = true;
+      llmStatus = 'gemini';
+      console.log('✅ Gemini API successfully used for analysis');
+    } catch (error) {
+      console.error('❌ Gemini API error:', error);
+      errorMessage = error.message;
+      // フォールバックとしてモック解説を使用
+      analysis = generateMockAnalysis(personality, answers, userMessage);
+      llmStatus = 'mock_fallback';
+      console.log('⚠️ Fallback to mock analysis due to Gemini API error');
+    }
 
     res.status(200).json({
       success: true,
-      analysis: mockAnalysis,
+      analysis: analysis,
+      llmUsed: llmUsed,
+      llmStatus: llmStatus,
+      errorMessage: errorMessage,
       timestamp: new Date().toISOString()
     });
 
@@ -66,21 +86,25 @@ function generateMockAnalysis(personality, answers, userMessage) {
   return baseMessage + additionalInsight;
 }
 
-// 将来のLLM API連携用の関数（コメントアウト）
-/*
-async function generateLLMAnalysis(personality, answers, userMessage) {
-  const openaiApiKey = process.env.OPENAI_API_KEY;
+// GEMINI API を使用したパーソナライズされた解説生成関数
+async function generateGeminiAnalysis(personality, answers, userMessage) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
   
-  if (!openaiApiKey) {
-    throw new Error('OpenAI API key not configured');
+  if (!geminiApiKey) {
+    throw new Error('Gemini API key not configured');
   }
 
+  // ユーザーの回答パターンを整理
+  const answerSummary = answers.map((answer, index) => {
+    return `質問${index + 1}: ${answer.text || '選択済み'}`;
+  }).join(', ');
+
   const prompt = `
-あなたは心理分析の専門家です。以下の情報を基に、ユーザーにパーソナライズされた解説を生成してください。
+あなたは優しく洞察力のある心理カウンセラーです。以下の情報を基に、ユーザーにパーソナライズされた解説を日本語で生成してください。
 
 診断結果: ${personality.name} (${personality.type})
 名言: "${personality.quote}"
-ユーザーの回答パターン: ${JSON.stringify(answers)}
+ユーザーの回答パターン: ${answerSummary}
 ${userMessage ? `ユーザーメッセージ: "${userMessage}"` : ''}
 
 以下の要件で解説を作成してください：
@@ -88,30 +112,57 @@ ${userMessage ? `ユーザーメッセージ: "${userMessage}"` : ''}
 2. 具体的な回答に基づいた分析
 3. 日本語で200-300文字程度
 4. ${personality.name}の名言との関連性を含める
+5. 敬語を使用し、親しみやすい語りかけるような文体
 `;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openaiApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'あなたは優しく洞察力のある心理カウンセラーです。' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ]
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
+    const errorText = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  
+  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    throw new Error('Invalid response from Gemini API');
+  }
+
+  return data.candidates[0].content.parts[0].text;
 }
-*/
